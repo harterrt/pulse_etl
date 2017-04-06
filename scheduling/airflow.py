@@ -7,4 +7,5 @@ if __name__ == "__main__":
     sc = SparkContext(conf=conf)
     sqlContext = SQLContext(sc)
 
-    main.etl_job(sc, sqlContext)
+    tpt = main.etl_job(sc, sqlContext)
+
