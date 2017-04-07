@@ -42,7 +42,10 @@ def pings_to_df(sqlContext, pings, data_frame_config):
         raw_value = ping[column_config.path]
         func = column_config.cleaning_func
         if func is not None:
-            return func(raw_value)
+            try:
+                return func(raw_value)
+            except:
+                return None
         else:
             return raw_value
 
@@ -55,15 +58,10 @@ def pings_to_df(sqlContext, pings, data_frame_config):
         filtered_pings.map(ping_to_row),
         schema = data_frame_config.toStructType())
 
-def etl_job(sc, sqlContext, submission_date=None, save=True):
-    if submission_date is None:
-        submission_date = (date.today() - timedelta(1)).strftime("%Y%m%d")
-
-    get_doctype_pings = lambda docType: Dataset.from_source("telemetry")         .where(docType=docType)         .where(submissionDate=submission_date)         .where(appName="Firefox")         .records(sc)
-
-    tpt = pings_to_df(
+def transform_pings(sqlContext, pings):
+    return pings_to_df(
         sqlContext,
-        get_doctype_pings("testpilottest"),
+        pings,
         DataFrameConfig([
             ("method", "payload/payload/method", None, StringType()),
             ("id", "payload/payload/id", None, StringType()),
@@ -96,6 +94,19 @@ def etl_job(sc, sqlContext, submission_date=None, save=True):
             ("timestamp", "payload/timestamp", None, LongType()),
             ("version", "payload/version", None, StringType())
         ])).filter("test = 'pulse@mozilla.com'")
+
+
+def etl_job(sc, sqlContext, submission_date=None, save=True):
+    if submission_date is None:
+        submission_date = (date.today() - timedelta(1)).strftime("%Y%m%d")
+
+    pings = Dataset.from_source("telemetry")\
+                    .where(docType="testpilottest")\
+                    .where(submissionDate=submission_date)\
+                    .where(appName="Firefox")\
+                    .records(sc)
+
+    tpt = transform_pings(pings)
 
     if save:
         path = 's3://telemetry-parquet/testpilot/txp_pulse/v1/submission_date={}'
