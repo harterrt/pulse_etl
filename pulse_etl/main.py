@@ -139,7 +139,7 @@ def etl_job(sc, sqlContext, submission_date=None, save=True):
                     .where(appName="Firefox")\
                     .records(sc)
 
-    tpt = transform_pings(pings)
+    tpt = transform_pings(sqlContext, pings)
 
     if save:
         path = 's3://telemetry-parquet/testpilot/txp_pulse/v1/submission_date={}'
