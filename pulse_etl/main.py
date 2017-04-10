@@ -1,6 +1,7 @@
 from datetime import *
 import dateutil.parser
 from pyspark.sql.types import *
+from pyspark.sql import Row
 
 from moztelemetry import get_pings_properties
 from moztelemetry.dataset import Dataset
@@ -58,7 +59,38 @@ def pings_to_df(sqlContext, pings, data_frame_config):
         filtered_pings.map(ping_to_row),
         schema = data_frame_config.toStructType())
 
+class Request:
+    def __option__(func):
+        return lambda x: func(x) if x is not None else None
+
+    int_type = (__option__(int), LongType())
+    float_type = (__option__(float), DoubleType())
+
+    field_types = {
+        'num': int_type,
+        'cached': float_type,
+        'cdn': float_type,
+        'time': int_type,
+    }
+
+    StructType = StructType([
+        StructField(key, field_types[key][1], True) for key in field_types
+    ])
+
+    def __init__(self, request_dict):
+        args = {field: conversion(request_dict.get(field))
+                for field, (conversion, sql_type) in Request.field_types.items()}
+        self.Row = Row(**args)
+
+
+
 def transform_pings(sqlContext, pings):
+    def requests_to_rows(requests):
+        out =  {k: Request(v).Row for k, v in requests.items()}
+        return out
+
+    RequestsType = MapType(StringType(), Request.StructType)
+
     return pings_to_df(
         sqlContext,
         pings,
@@ -92,7 +124,8 @@ def transform_pings(sqlContext, pings):
             ("test", "payload/test", None, StringType()),
             ("variants", "payload/variants", None, StringType()),
             ("timestamp", "payload/timestamp", None, LongType()),
-            ("version", "payload/version", None, StringType())
+            ("version", "payload/version", None, StringType()),
+            ("requests", "payload/payload/requests", requests_to_rows, RequestsType)
         ])).filter("test = 'pulse@mozilla.com'")
 
 

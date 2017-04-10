@@ -28,6 +28,31 @@ def simple_rdd(spark_context):
 # Tests
 def test_simple_transform(simple_rdd, spark_context):
     actual = transform_pings(SQLContext(spark_context), simple_rdd).take(1)[0]
+
+    empty_request_keys = ["sub_frame", "stylesheet", "script", "image",
+        "object", "xmlhttprequest", "xbl", "xslt", "ping", "beacon", "xml_dtd",
+        "font", "media", "websocket", "csp_report", "imageset", "web_manifest",
+        "other"]
+    empty_request = Row(cached=None, cdn=None, num=None, time=None)
+
+    requests = dict(
+        [(key, empty_request) for key in empty_request_keys] + [
+            ("all", Row(
+                num = 12,
+                time = 4978,
+                cached = 0.08333333333333333,
+                cdn = 0
+            )),
+            ("main_frame", Row(
+                num = 1,
+                time = 726,
+                cached = 0,
+                cdn = 0
+            ))
+        ]
+    )
+
+
     expected = {
         'method': None,
         'id': u'19e0cf07-8145-4666-938d-811397db85dc',
@@ -59,7 +84,8 @@ def test_simple_transform(simple_rdd, spark_context):
         'test': u'pulse@mozilla.com',
         'variants': None,
         'timestamp': 76543,
-        'version': u'1.0.2'
+        'version': u'1.0.2',
+        'requests': requests
     }
 
     assert all(map(lambda key: actual[key] == expected[key], expected.keys()))
