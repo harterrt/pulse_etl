@@ -125,7 +125,12 @@ def transform_pings(sqlContext, pings):
             ("variants", "payload/variants", None, StringType()),
             ("timestamp", "payload/timestamp", None, LongType()),
             ("version", "payload/version", None, StringType()),
-            ("requests", "payload/payload/requests", requests_to_rows, RequestsType)
+            ("requests", "payload/payload/requests", requests_to_rows, RequestsType),
+            ("disconnectRequests","payload/payload/disconnectRequests", None, LongType()),
+            ("consoleErrors","payload/payload/consoleErrors", None, LongType()),
+            ("e10sStatus","payload/payload/e10sStatus", None, LongType()),
+            ("e10sProcessCount","payload/payload/e10sProcessCount", None, LongType()),
+            ("trackingProtection","payload/payload/trackingProtection", None, BooleanType())
         ])).filter("test = 'pulse@mozilla.com'")
 
 

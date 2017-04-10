@@ -85,7 +85,12 @@ def test_simple_transform(simple_rdd, spark_context):
         'variants': None,
         'timestamp': 76543,
         'version': u'1.0.2',
-        'requests': requests
+        'requests': requests,
+        'disconnectRequests': 1,
+        'consoleErrors': 0,
+        'e10sStatus': 1,
+        'e10sProcessCount': 4,
+        'trackingProtection': False
     }
 
     assert all(map(lambda key: actual[key] == expected[key], expected.keys()))
